@@ -1,0 +1,7 @@
+cryptography
+IPython
+pymysql
+python-dotenv
+request
+simplejson
+sqlalchemy

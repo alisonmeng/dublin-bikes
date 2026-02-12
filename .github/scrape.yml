@@ -1,0 +1,54 @@
+name: Hourly Weather Scraper
+
+# 1. TRIGGERS
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+# 2. PERMISSIONS
+permissions:
+  contents: write
+
+jobs:
+  scrape-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      # A. Check out code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # B. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      # C. Install libraries
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # D. Run your script
+      - name: Run scraping script
+        run: python weather_scrape_json.py
+        env:
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_URI: ${{ secrets.DB_URI }}
+          OWKEY: ${{ secrets.OWKEY }}
+          CURRENT_URI: ${{ secrets.CURRENT_URI }}
+
+      # E. Save the data (Commit back to repo)
+      - name: Commit and push data
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          # The wildcard (*) adds any new timestamped files in the data folder
+          git add helpers/data/*
+          git commit -m "Auto-update: New weather data" || exit 0
+          git push

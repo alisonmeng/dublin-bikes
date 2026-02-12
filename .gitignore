@@ -1,0 +1,19 @@
+# --- Security (CRITICAL) ---
+.env
+*.pem
+*.key
+
+# --- OS & Editor Clutter ---
+.vscode/
+.DS_Store
+__pycache__/
+*.pyc
+
+# --- MISC ---
+.archive
+!helpers/data/.gitkeep
+SE Dublin Bike REST/*
+*.db
+db/*.db
+venv/
+env/
