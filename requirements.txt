@@ -2,6 +2,6 @@ cryptography
 IPython
 pymysql
 python-dotenv
-request
+requests
 simplejson
 sqlalchemy
