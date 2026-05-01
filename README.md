@@ -1,133 +1,137 @@
-# Dublin Bikes - Group 13 of COMP30830
+# Dublin Bikes Project - Group 13 of COMP30830
 
 ## Title Page
-
-* Product: Dublin Bikes
-* Version: TBC
-* Date: TBC
+* **Product**: Dublin Bikes Project
+* **Version**: 1.0.0
+* **Date**: May 2026
 
 ## Table of Contents
-- [1. Features](#1-features)
-- [2. Getting Started](#2-getting-started)
-  - [Installation](#installation)
+- [1. Introduction](#1-introduction)
+- [2. Features](#2-features)
+- [3. Architecture Overview](#3-architecture-overview)
+- [4. Getting Started](#4-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation (Docker - Recommended)](#installation-docker---recommended)
+  - [Installation (Local)](#installation-local)
   - [Configuration](#configuration)
-- [3. Usage](#3-usage)
-- [4. Development Guidelines](#4-development-guidelines)
-- [(TBC)Testing]()
-- [(TBC)License]()
-- [(TBC)Contact]()
+- [5. Usage](#5-usage)
+- [6. Repository Structure](#6-repository-structure)
+- [7. Development Guidelines](#7-development-guidelines)
 
 ---
 
-## 1. Features
+## 1. Introduction
+Welcome to the **Dublin Bikes Project**, developed by Group 13 for COMP30830. 
+This is a modern web application designed to provide users with real-time availability and machine learning-powered predictions for Dublin Bikes stations. The system is built upon a scalable microservices architecture using Flask, Nginx, MySQL, and Docker.
 
-### **Feature and Functionality:**
-- Bike station real-time availability and prediction
-- Nearby weather information
-- Login to save your favorite stops
+## 2. Features
 
-### **Functional Map**
-* Main:
-    - Map showing stations, availability
-    - Fetch user device location
-    - Predict station availability
-    - Reloate self
+### **Core Functionality**
+- **Real-Time Interactive Map**: Displays all bike stations with their current availability (bikes and empty stands).
+- **Machine Learning Predictions**: Predicts future station availability based on historical data, time features, and live weather conditions fetched via Open-Meteo API.
+- **Smart Weather Integration**: Provides nearby weather information with an intelligent in-memory caching mechanism to ensure high availability and responsiveness.
+- **User Accounts & Authentication**: Secure signup, login, and session management.
+- **Favorites System**: Logged-in users can save and quickly access their favorite stations.
+- **Geolocation**: Automatically retrieves device location to center the map and find the closest stations.
 
-* Account:
-    - Signup
-    - Login
-    - Change password
-    - My subscription/payment
+## 3. Architecture Overview
+The system adopts a decoupled, containerized architecture:
 
-* Overview:
-    - Service tutorial
-    - Safety guide
-    - Subscription
+1. **Access Layer (Nginx)**: Acts as a reverse proxy, handling HTTPS requests, serving static assets, and routing API calls to the backend.
+2. **Application Layer (Flask)**: Implements business logic using Blueprints (`main.py`, `auth.py`, `machine_learning.py`). Handles user authentication (session-based) and interactions.
+3. **Prediction Layer**: Employs a pre-trained Multi-Layer Perceptron (MLP) model (`.joblib`) for real-time predictions, blending time variables with real-time weather data.
+4. **Data Persistence (MySQL)**: Securely stores station data, hashed user credentials, and favorite relationships.
 
----
+## 4. Getting Started
 
-## 2. Getting Started
+### **Prerequisites**
+- **Docker** and **Docker Compose** (Highly Recommended for deployment)
+- Python and Conda (For local development only)
+- API Keys: Open-Weather-API, Google Maps, JCDecaux
 
-### **Installation:**
-To get started with **Dublin Bikes - Group 13 of COMP30830**, follow these steps:
+### **Installation (Docker - Recommended)**
 1. Clone the repository:
    ```bash
-   git clone https://github.com/kksskkkksskkkks/COMP30830_Project/tree/develop
+   git clone https://github.com/kksskkkksskkkks/COMP30830_Project/tree/main
+   cd COMP30830_Project
    ```
 
-2. Navigate to the project directory:
-   ```bash
-   cd COMP30838_Project
-   ```
+2. Create a `.env` file in the project root directory (see [Configuration](#configuration)).
 
-3. Set up enviroment in your conda:
+3. Build and launch the application using Docker Compose:
+   - **For local testing/development**:
+     ```bash
+     docker-compose -f docker-compose.local.yml up --build -d
+     ```
+   - **For production**:
+     ```bash
+     docker-compose up --build -d
+     ```
+
+### **Installation (Local)**
+1. Set up your Conda environment:
    ```bash
-   conda active 'your-conda-env'
+   conda activate <your-conda-env>
    conda env update --file environment.yml --prune
    ```
+2. Create your `.env` file.
+3. Ensure you have a local MySQL instance running that matches your `.env` configuration.
 
-4. Create a `.env` file in the root folder
-   See [Configuration](#configuration) for the full variable list.
-
- 
-### **Configuration:** 
-To configure the project, create a `.env` file in the root directory and add the following environment variables:
+### **Configuration**
+Create a `.env` file in the root directory with the following variables:
 
 ```env
 # Database
-DB_USER = "your_db_username"
-DB_PASSWORD = "your_db_password"
-DB_PORT = "your_db_port"
-DB_NAME = "your_db_name"
-DB_URI = "your_db_uri"
+DB_USER="your_db_username"
+DB_PASSWORD="your_db_password"
+DB_PORT="3306"
+DB_NAME="your_db_name"
+DB_URI="db"
 
-# Bike
-JCKEY = "your_jcdecaux_key"
-
-# Weather
-WEATHER_KEY = "your_openwether_api_key"
-
-# Google Map
-MAP_KEY = "your_map_key"
+# APIs
+BIKE_KEY="your_jcdecaux_key"
+NAME="dublin
+MAP_KEY="your_google_maps_key"
+STATIONS_URI="https://api.jcdecaux.com/vls/v1/stations"
+WEATHER_KEY="your_open_weaather_key"
+WEATHER_URI="https://api.openweathermap.org/data/2.5/weather"
+CITY_NAME="Dublin"
 ```
 
----
+## 5. Usage
+- **Docker**: Open your web browser and navigate to `http://localhost`. Nginx will serve the application.
+- **Local**: Run the application from the root folder:
+  ```bash
+  python run.py
+  ```
+  Then access the app at `http://127.0.0.1:5000`.
 
-## 3. Usage
-Here’s how to use **Dublin Bikes - Group 13 of COMP30830**:
+## 6. Repository Structure
 
-* In terminal, at the project root folder, run:
-   ```bash
-   python run.py
-   ```
-
----
-
-## 4. Development Guidelines
-
-**Repo Structure**
-
+```text
 COMP30830_Project/
-├── app/                    # All application code lives here
-│   ├── __init__.py         # Factory function to create the app
-│   ├── connection.py       # Database connection (SQLAlchemy)
-│   ├── routes/             # Backend logic & API endpoints (Blueprints)
-│   │   ├── __init__.py     # Keep empty
-│   │   ├── main.py         # Business logic (Bike, weather, map)
-│   │   └── auth.py         # User related functions
+├── app/                    # Core application logic
+│   ├── __init__.py         # Flask app factory setup
+│   ├── connection.py       # SQLAlchemy database connection
+│   ├── routes/             # Backend API logic & Blueprints
+│   │   ├── main.py         # Core map and business logic
+│   │   ├── auth.py         # User lifecycle and favorites logic
+│   │   └── machine_learning.py # ML Prediction service integration
 │   ├── static/             # Frontend assets (CSS, JS, Images)
-│   │   ├── styles.css
-│   │   └── scripts.js
-│   └── templates/          # Frontend HTML (Jinja2)
-│       ├── index.html
-│       ├── signup.html
-│       ├── login.html
-│       └── account.html
-├── .env                    # Environment variables (Secret keys, DB URLs)
-├── config.py               # App configuration settings
-├── requirements.txt        # Python dependencies
-└── run.py                  # Entry point to start the app
+│   └── templates/          # Frontend templates (Jinja2)
+├── database/               # SQL scripts & database init configs
+├── machine_learning/       # Model training scripts, raw datasets
+├── tests/                  # Tests
+├── nginx/                  # Nginx configuration & proxy settings
+├── docker-compose.yml      # Main Docker Compose configuration
+├── docker-compose.local.yml# Local testing Docker Compose config
+├── Dockerfile              # Containerization definition for Flask web app
+├── environment.yml         # Conda environment dependencies
+├── requirements.txt        # Docker environment dependencies
+└── run.py                  # Entry point for local execution
+```
 
+## 7. Development Guidelines
 
 **Coding Standards:**
 A summary of the coding best practices:
