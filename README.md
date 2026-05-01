@@ -121,7 +121,7 @@ COMP30830_Project/
 │   └── templates/          # Frontend templates (Jinja2)
 ├── database/               # SQL scripts & database init configs
 ├── machine_learning/       # Model training scripts, raw datasets
-├── tests/                  # Tests
+├── tests/                  # Backend unit and integration tests
 ├── nginx/                  # Nginx configuration & proxy settings
 ├── docker-compose.yml      # Main Docker Compose configuration
 ├── docker-compose.local.yml# Local testing Docker Compose config
