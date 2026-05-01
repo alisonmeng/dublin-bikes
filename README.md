@@ -93,7 +93,7 @@ BIKE_KEY="your_jcdecaux_key"
 NAME="dublin
 MAP_KEY="your_google_maps_key"
 STATIONS_URI="https://api.jcdecaux.com/vls/v1/stations"
-WEATHER_KEY="your_open_weaather_key"
+WEATHER_KEY="your_open_weather_key"
 WEATHER_URI="https://api.openweathermap.org/data/2.5/weather"
 CITY_NAME="Dublin"
 ```
