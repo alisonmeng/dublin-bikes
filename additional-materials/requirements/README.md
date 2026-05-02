@@ -1,11 +1,17 @@
 # Additional Materials - Requirements 
 
+## Interview Transcripts
+[Interview Transcripts](Interviews.pdf)
 
 ## Personas
 [Personas](Personas.pdf)
 
-## Interview Transcripts
-[Interview Transcripts](Interviews.pdf)
+## User Stories and Acceptance Criteria
+[User Stories](User_Stories.pdf)
+
+[Diagram for Worker User Stories](Diagram_for_Worker_User_Stories.pdf)
+
+[Acceptance Criteria](Acceptance_Criteria.pdf)
 
 ## Mockups
 Mockups were created during Sprint 1 to visualise a possible solution
@@ -21,9 +27,4 @@ Mockups were created during Sprint 1 to visualise a possible solution
 <img width="600" alt="mockup_on_menu_click" src="https://github.com/user-attachments/assets/63e39efe-2c96-4568-b6c3-9618153ce8dc" /> <br>
 *Figure 2.2.3: Mockup on-menu click*
 
-## User Stories and Acceptance Criteria
-[User Stories](User_Stories.pdf)
 
-[Diagram for Worker User Stories](Diagram_for_Worker_User_Stories.pdf)
-
-[Acceptance Criteria](Acceptance_Criteria.pdf)
