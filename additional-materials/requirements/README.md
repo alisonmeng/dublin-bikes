@@ -1,4 +1,4 @@
-# Requirements — Additional Materials
+# Additional Materials - Requirements 
 
 ## Mockups
 Mockups were created during Sprint 1 to visualise a possible solution
