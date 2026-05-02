@@ -18,6 +18,8 @@
 
 ## Class Diagram
 
+<img width="800" alt="class_diagram" src="https://github.com/user-attachments/assets/c764f711-7005-4f6a-b760-c6d7dc46fbd4" /><br>
+*Figure 3.3.1: Class Diagram*<br><br><br>
 
 ## Sequence Diagrams
 
