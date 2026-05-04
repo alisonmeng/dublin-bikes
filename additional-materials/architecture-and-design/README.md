@@ -7,7 +7,11 @@
 
 
 <img width="600" alt="deployment_diagram" src="https://github.com/user-attachments/assets/4b5cad0d-7472-4828-8a7f-9acfb1b6ba51" /> <br>
-*Figure 3.1.2: Deployment diagram* <br><br><br>
+*Figure 3.1.2: Deployment diagram* <br><br>
+
+
+<img width="600" alt="secure_connection" src="https://github.com/user-attachments/assets/f3ba698a-fcc7-4ae5-8364-9aacfcb3828a" /><br>
+*Figure 3.1.3: Secure connection verified by Let's Encrypt (SSL/TLS, HTTPS)*<br><br><br>
 
 
 ## Database Design
