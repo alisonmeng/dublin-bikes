@@ -1,0 +1,50 @@
+name: Scrape bikes and weather
+
+# Every 30 minutes. GitHub delays scheduled runs when the platform is busy and
+# disables them entirely after 60 days without repository activity - neither
+# affects the live site, only how much history accumulates.
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+# Nothing is written back to the repository; the job only talks to the database.
+permissions:
+  contents: read
+
+concurrency:
+  group: scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-scraper.txt
+
+      # The scraper needs neither Flask nor scikit-learn, so it installs a much
+      # smaller dependency set than the deployed application.
+      - name: Install dependencies
+        run: pip install -r requirements-scraper.txt
+
+      - name: Scrape into the database
+        run: python database/scrape_to_db.py
+        env:
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_URI: ${{ secrets.DB_URI }}
+          DB_SSL_CA: certs/aiven-ca.pem
+          BIKE_KEY: ${{ secrets.BIKE_KEY }}
+          WEATHER_KEY: ${{ secrets.WEATHER_KEY }}
