@@ -1,9 +1,11 @@
 import os
 import sys
 import time
+import warnings
 from datetime import datetime, timedelta
+from pathlib import Path
 
-import pandas as pd
+import numpy as np
 import joblib
 import requests
 from flask import Blueprint, request, jsonify
@@ -19,24 +21,76 @@ ml_bp = Blueprint('ml', __name__)
 # 2.loading model
 print("Loading MLP models...")
 
+# Resolve model paths from this file rather than the working directory: under
+# Gunicorn the CWD happens to be the project root, but on a serverless host it
+# is not, and a relative path there silently fails every prediction route.
+MODEL_DIR = Path(__file__).resolve().parents[2] / "machine_learning" / "output_model"
+
 bike_model_pipeline = None
 stand_model_pipeline = None
 
+# The pipelines were fitted on named columns; we now feed them a positionally
+# ordered array (see _build_feature_matrix), which is equivalent but makes
+# scikit-learn warn once per call. Silence just that message.
+warnings.filterwarnings(
+    "ignore",
+    message="X does not have valid feature names",
+    category=UserWarning,
+)
+
 try:
-    bike_model_pipeline = joblib.load("machine_learning/output_model/bike_availability_mlp_pipeline.joblib")
+    bike_model_pipeline = joblib.load(MODEL_DIR / "bike_availability_mlp_pipeline.joblib")
     print("[Model A] Available bike prediction model loaded successfully!")
 except Exception as e:
     print(f"[Model A] Failed to load available bike prediction model: {e}")
 
 try:
-    stand_model_pipeline = joblib.load("machine_learning/output_model/bike_stands_mlp_pipeline.joblib")
+    stand_model_pipeline = joblib.load(MODEL_DIR / "bike_stands_mlp_pipeline.joblib")
     print("[Model B] Empty stand prediction model loaded successfully!")
 except Exception as e:
     print(f"[Model B] Failed to load empty stand prediction model: {e}")
 
 
 
-# 3. Weather Fetching and Caching Mechanism
+# 3. Feature Preparation
+
+def _build_feature_matrix(rows: list[dict], expected_features) -> np.ndarray:
+    """
+    Build the model input matrix in the exact column order the pipeline expects.
+
+    This replaces the previous pandas round-trip
+    (``pd.DataFrame(rows).reindex(columns=expected_features, fill_value=0)``):
+    keys the model does not expect are dropped, and expected columns absent
+    from ``rows`` -- notably the 100+ ``number_<id>`` one-hot columns for every
+    other station -- stay zero.
+
+    A plain array is a valid substitute here because both pipelines are
+    ``StandardScaler`` followed by ``MLPRegressor``, with no transformer that
+    selects columns by name, so position is the only thing that matters.
+    pandas is avoided deliberately: since 3.0 it requires PyArrow, and the two
+    together exceed the deployment bundle size limit.
+
+    Args:
+        rows: One dict of ``feature name -> value`` per sample to predict.
+        expected_features: The pipeline's ``feature_names_in_``, in order.
+
+    Returns:
+        A ``(len(rows), len(expected_features))`` float array.
+    """
+    column_index = {name: i for i, name in enumerate(expected_features)}
+    matrix = np.zeros((len(rows), len(expected_features)), dtype=float)
+
+    for row_number, row in enumerate(rows):
+        for name, value in row.items():
+            column = column_index.get(name)
+            # A missing column means the model was not trained on this feature.
+            if column is not None and value is not None:
+                matrix[row_number, column] = float(value)
+
+    return matrix
+
+
+# 4. Weather Fetching and Caching Mechanism
 
 # Global cache configuration
 WEATHER_CACHE = {
@@ -103,7 +157,7 @@ def fetch_dublin_weather_24h():
         return [{"main_temp": 15.0, "main_humidity": 60, "pressure": 1013.0} for _ in range(24)]
 
 
-# 4. Route Setup (Blueprint-based)
+# 5. Route Setup (Blueprint-based)
 
 # Route 1: Predict available bike numbers
 @ml_bp.route("/bike", methods=["GET"])
@@ -150,26 +204,24 @@ def predict_bike():
         target_idx = max(0, min(23, delta_hours))
         weather = forecasts[target_idx]
 
-        input_dict = {
-            'bike_stands': [bike_stands],
-            'temp': [weather["main_temp"] + 273.15],
-            'humidity': [weather["main_humidity"]],
-            'pressure': [weather["pressure"]],
-            'hour': [hour],
-            'day_of_week': [day_of_week],
-            'is_weekend': [is_weekend],
-            'wind_speed': [weather.get("wind_speed", 0.0)],
-            'rain_1h': [weather.get("rain_1h", 0.0)]
+        features = {
+            'bike_stands': bike_stands,
+            'temp': weather["main_temp"] + 273.15,
+            'humidity': weather["main_humidity"],
+            'pressure': weather["pressure"],
+            'hour': hour,
+            'day_of_week': day_of_week,
+            'is_weekend': is_weekend,
+            'wind_speed': weather.get("wind_speed", 0.0),
+            'rain_1h': weather.get("rain_1h", 0.0),
+            f'number_{station_id}': 1,
         }
 
-        input_df = pd.DataFrame(input_dict)
-        station_col_name = f'number_{station_id}'
-        input_df[station_col_name] = 1
+        input_matrix = _build_feature_matrix(
+            [features], bike_model_pipeline.feature_names_in_
+        )
 
-        expected_features = bike_model_pipeline.feature_names_in_
-        input_df = input_df.reindex(columns=expected_features, fill_value=0)
-
-        prediction = bike_model_pipeline.predict(input_df)
+        prediction = bike_model_pipeline.predict(input_matrix)
         predicted_bikes = int(round(prediction[0]))
         result = max(0, min(predicted_bikes, bike_stands))
 
@@ -232,24 +284,22 @@ def predict_stand():
         target_idx = max(0, min(23, delta_hours))
         weather = forecasts[target_idx]
 
-        input_dict = {
-            'bike_stands': [bike_stands],
-            'temp': [weather["main_temp"] + 273.15],
-            'humidity': [weather["main_humidity"]],
-            'pressure': [weather["pressure"]],
-            'hour': [hour],
-            'day_of_week': [day_of_week],
-            'is_weekend': [is_weekend]
+        features = {
+            'bike_stands': bike_stands,
+            'temp': weather["main_temp"] + 273.15,
+            'humidity': weather["main_humidity"],
+            'pressure': weather["pressure"],
+            'hour': hour,
+            'day_of_week': day_of_week,
+            'is_weekend': is_weekend,
+            f'number_{station_id}': 1,
         }
 
-        input_df = pd.DataFrame(input_dict)
-        station_col_name = f'number_{station_id}'
-        input_df[station_col_name] = 1
+        input_matrix = _build_feature_matrix(
+            [features], stand_model_pipeline.feature_names_in_
+        )
 
-        expected_features = stand_model_pipeline.feature_names_in_
-        input_df = input_df.reindex(columns=expected_features, fill_value=0)
-
-        prediction = stand_model_pipeline.predict(input_df)
+        prediction = stand_model_pipeline.predict(input_matrix)
         predicted_empty_stands = int(round(prediction[0]))
         predicted_empty_stands = max(0, min(predicted_empty_stands, bike_stands))
 
@@ -319,14 +369,14 @@ def predict_bikes_24h():
                 'is_weekend': 1 if current_dt.weekday() >= 5 else 0
             })
 
-        input_df = pd.DataFrame(input_data_list)
-        station_col_name = f'number_{station_id}'
-        input_df[station_col_name] = 1
+        for row in input_data_list:
+            row[f'number_{station_id}'] = 1
 
-        expected_features = bike_model_pipeline.feature_names_in_
-        input_df = input_df.reindex(columns=expected_features, fill_value=0)
+        input_matrix = _build_feature_matrix(
+            input_data_list, bike_model_pipeline.feature_names_in_
+        )
 
-        predictions = bike_model_pipeline.predict(input_df)
+        predictions = bike_model_pipeline.predict(input_matrix)
         predicted_available_bikes_list = []
 
         for pred in predictions:
@@ -402,14 +452,14 @@ def predict_stands_24h():
                 'is_weekend': 1 if current_dt.weekday() >= 5 else 0
             })
 
-        input_df = pd.DataFrame(input_data_list)
-        station_col_name = f'number_{station_id}'
-        input_df[station_col_name] = 1
+        for row in input_data_list:
+            row[f'number_{station_id}'] = 1
 
-        expected_features = stand_model_pipeline.feature_names_in_
-        input_df = input_df.reindex(columns=expected_features, fill_value=0)
+        input_matrix = _build_feature_matrix(
+            input_data_list, stand_model_pipeline.feature_names_in_
+        )
 
-        predictions = stand_model_pipeline.predict(input_df)
+        predictions = stand_model_pipeline.predict(input_matrix)
         predicted_empty_stands_list = []
 
         for pred in predictions:
