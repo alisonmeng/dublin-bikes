@@ -1,9 +1,11 @@
-# Dublin Bikes Project - Group 13 of COMP30830
+# Dublin Bikes Project
 
 ## Title Page
 * **Product**: Dublin Bikes Project
 * **Version**: 1.0.0
 * **Date**: May 2026
+* **Course**: COMP30830 Software Engineering, University College Dublin
+* **Team**: Group 13
 
 ## Table of Contents
 - [1. Introduction](#1-introduction)
@@ -25,8 +27,12 @@
 ---
 
 ## 1. Introduction
-Welcome to the **Dublin Bikes Project**, developed by Group 13 for COMP30830.
-This is a modern web application designed to provide users with real-time availability and machine learning-powered predictions for Dublin Bikes stations. The system is built upon a scalable architecture using Flask, MySQL, and a pre-trained MLP model, and it can be run either as a Docker Compose stack or deployed to a fully free-tier cloud setup.
+The **Dublin Bikes Project** is a web application for Dublin's public bike-sharing scheme, developed
+by a student group as part of a software engineering module in Computer Science at University College
+Dublin.
+
+It shows live availability at every station and predicts how many bikes and empty stands a station
+will have over the next 24 hours, by combining a trained neural network with current weather data.
 
 ## 2. Features
 
@@ -40,32 +46,31 @@ This is a modern web application designed to provide users with real-time availa
 
 ## 3. Architecture Overview
 
-The application layer is identical in both environments; only what sits in front of it and where the
-data lives differ.
-
-| Layer | Local (Docker Compose) | Hosted (free tier) |
-|---|---|---|
-| Access / TLS | Nginx reverse proxy, serves `/static/` and terminates HTTPS | Vercel edge network, TLS and CDN included |
-| Application | Flask + Gunicorn container | Flask on the Vercel Python runtime (`main.py`) |
-| Database | MySQL 8 container with a local volume | Aiven for MySQL 8, TLS-only connection |
-| Data collection | Run the scraper by hand | GitHub Actions cron, every 30 minutes |
+| Layer | Service |
+|---|---|
+| Access / TLS | Vercel edge network — TLS and CDN included |
+| Application | Flask on the Vercel Python runtime (`main.py`) |
+| Database | Aiven for MySQL 8, over a TLS-only connection |
+| Data collection | GitHub Actions, every 30 minutes |
 
 **Application layer.** Business logic is organised with Flask Blueprints — `main.py` (map, stations,
 weather), `auth.py` (accounts, sessions, favourites) and `machine_learning.py` (predictions). Sessions
 are cookie-based and signed with `SECRET_KEY`.
 
-**Prediction layer.** Two pre-trained `Pipeline([StandardScaler, MLPRegressor])` models
-(`.joblib`, ~630 KB each) blend time features with live Open-Meteo weather to forecast available bikes
-and empty stands, for a single point in time or across the next 24 hours.
+**Prediction layer.** Two trained models — a standardiser followed by a multi-layer perceptron —
+blend time features with live Open-Meteo weather to forecast available bikes and empty stands, either
+for a single moment or across the next 24 hours.
 
 **Data persistence.** MySQL stores station metadata, historical availability and weather samples,
 hashed user credentials, and the user↔station favourites relation.
 
-> **Note on dependencies:** the prediction routes build their feature matrix with **NumPy rather than
-> pandas**. The models are a plain scaler + MLP with no column-name-based transformer, so an ordered
-> array is an exact substitute — and dropping pandas (which since 3.0 pulls in PyArrow) keeps the
-> deployed bundle inside Vercel's 250 MB function limit. `pandas` is still used for model *training*
-> in `machine_learning/bike_perdiction.ipynb`; see `requirements-dev.txt`.
+> **Note on dependencies:** the models are *trained* with scikit-learn but *served* with NumPy alone.
+> `machine_learning/export_models.py` converts each trained `.joblib` pipeline into a small `.npz` of
+> weights, which `app/mlp.py` evaluates directly — a standardisation followed by a few matrix
+> multiplications. That keeps scikit-learn, SciPy and pandas out of the deployment, shrinking it from
+> 229 MB to 84 MB (the hosting limit is 250 MB) and removing seconds from every cold start.
+> Predictions are bit-identical to the original pipeline; `export_models.py` verifies that on every
+> export. Re-run it after retraining a model.
 
 ## 4. Getting Started
 
@@ -229,6 +234,7 @@ dublin-bikes/
 ├── app/                    # Core application logic
 │   ├── __init__.py         # Flask app factory setup
 │   ├── connection.py       # SQLAlchemy database connection (TLS + serverless aware)
+│   ├── mlp.py              # NumPy-only inference for the trained models
 │   ├── routes/             # Backend API logic & Blueprints
 │   │   ├── main.py         # Core map and business logic
 │   │   ├── auth.py         # User lifecycle and favorites logic
@@ -237,7 +243,9 @@ dublin-bikes/
 │   └── templates/          # Frontend templates (Jinja2)
 ├── certs/                  # Public CA certificate for the managed database
 ├── database/               # SQL scripts, schema init, and the scraper
-├── machine_learning/       # Model training notebook, datasets, trained models
+├── machine_learning/       # Training notebook, datasets, trained models
+│   ├── export_models.py    # Converts trained .joblib pipelines to served .npz
+│   └── output_model/       # .joblib (trained) and .npz (served) models
 ├── tests/                  # Backend unit, integration and non-functional tests
 ├── nginx/                  # Nginx configuration & proxy settings (Docker only)
 ├── .github/workflows/      # Scheduled data collection
