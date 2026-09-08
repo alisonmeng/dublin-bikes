@@ -6,11 +6,5 @@
       "maxDuration": 60,
       "excludeFiles": "{machine_learning/input_data/**,machine_learning/output_model/*.joblib,machine_learning/**/*.ipynb,additional-materials/**,tests/**,nginx/**,database/**,**/__pycache__/**,**/*.pyc}"
     }
-  },
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/main.py"
-    }
-  ]
+  }
 }
