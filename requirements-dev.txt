@@ -1,0 +1,10 @@
+# Development-only dependencies: model training and test tooling.
+# Not installed in the deployed bundle.
+-r requirements.txt
+
+# Used by machine_learning/bike_perdiction.ipynb for training. The app itself
+# builds its feature matrix with NumPy so that pandas (and the PyArrow it now
+# requires) stays out of the deployment bundle.
+pandas==3.0.2
+
+coverage==7.13.5

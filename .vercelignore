@@ -1,0 +1,19 @@
+# Kept out of the deployment bundle. The trained .joblib models and app/static
+# must NOT be listed here - the app loads the models at import time and Flask
+# serves its own static assets.
+machine_learning/input_data/
+machine_learning/process_file/
+machine_learning/*.ipynb
+additional-materials/
+tests/
+nginx/
+database/
+docker-compose.yml
+docker-compose.local.yml
+Dockerfile
+environment.yml
+requirements-dev.txt
+requirements-scraper.txt
+__pycache__/
+*.pyc
+.coverage

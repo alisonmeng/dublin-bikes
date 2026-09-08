@@ -1,0 +1,16 @@
+# Keep the build context small. The trained models under
+# machine_learning/output_model/ are required at runtime and must stay.
+.git/
+.github/
+__pycache__/
+**/__pycache__/
+*.pyc
+.coverage
+.env
+.vercel/
+tests/
+additional-materials/
+machine_learning/input_data/
+machine_learning/process_file/
+machine_learning/*.ipynb
+nginx/certs/
