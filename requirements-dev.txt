@@ -2,6 +2,13 @@
 # Not installed in the deployed bundle.
 -r requirements.txt
 
+# Training and model export. The app serves predictions with NumPy alone, so
+# scikit-learn, SciPy and joblib are needed only to fit the models and to run
+# machine_learning/export_models.py. scikit-learn is pinned to the version the
+# .joblib pipelines were fitted with.
+scikit-learn==1.7.2
+joblib==1.5.3
+
 # Used by machine_learning/bike_perdiction.ipynb for training. The app itself
 # builds its feature matrix with NumPy so that pandas (and the PyArrow it now
 # requires) stays out of the deployment bundle.

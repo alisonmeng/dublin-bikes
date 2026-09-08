@@ -1,17 +1,16 @@
 import os
 import sys
 import time
-import warnings
 from datetime import datetime, timedelta
 from pathlib import Path
 
 import numpy as np
-import joblib
 import requests
 from flask import Blueprint, request, jsonify
 from sqlalchemy import text
 
 from app.connection import get_db
+from app.mlp import MlpPipeline
 from config import Config
 
 # 1. Register Blueprint
@@ -24,28 +23,24 @@ print("Loading MLP models...")
 # Resolve model paths from this file rather than the working directory: under
 # Gunicorn the CWD happens to be the project root, but on a serverless host it
 # is not, and a relative path there silently fails every prediction route.
+#
+# The .npz models are exported from the trained .joblib pipelines by
+# machine_learning/export_models.py and evaluated with NumPy alone, so the
+# running app needs neither scikit-learn nor SciPy. Re-run that script after
+# retraining a model.
 MODEL_DIR = Path(__file__).resolve().parents[2] / "machine_learning" / "output_model"
 
 bike_model_pipeline = None
 stand_model_pipeline = None
 
-# The pipelines were fitted on named columns; we now feed them a positionally
-# ordered array (see _build_feature_matrix), which is equivalent but makes
-# scikit-learn warn once per call. Silence just that message.
-warnings.filterwarnings(
-    "ignore",
-    message="X does not have valid feature names",
-    category=UserWarning,
-)
-
 try:
-    bike_model_pipeline = joblib.load(MODEL_DIR / "bike_availability_mlp_pipeline.joblib")
+    bike_model_pipeline = MlpPipeline.load(MODEL_DIR / "bike_availability_mlp_pipeline.npz")
     print("[Model A] Available bike prediction model loaded successfully!")
 except Exception as e:
     print(f"[Model A] Failed to load available bike prediction model: {e}")
 
 try:
-    stand_model_pipeline = joblib.load(MODEL_DIR / "bike_stands_mlp_pipeline.joblib")
+    stand_model_pipeline = MlpPipeline.load(MODEL_DIR / "bike_stands_mlp_pipeline.npz")
     print("[Model B] Empty stand prediction model loaded successfully!")
 except Exception as e:
     print(f"[Model B] Failed to load empty stand prediction model: {e}")

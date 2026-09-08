@@ -15,12 +15,10 @@ click==8.3.1
 blinker==1.9.0
 gunicorn==23.0.0
 
-# Prediction. scikit-learn is pinned to the version the .joblib pipelines were
-# fitted with; a different version unpickles with a compatibility warning and
-# no guarantee about the result.
+# Prediction. The models are evaluated with NumPy alone: they are exported from
+# the trained scikit-learn pipelines to .npz by machine_learning/export_models.py,
+# so neither scikit-learn nor SciPy is needed to serve a prediction.
 numpy==2.3.5
-scikit-learn==1.7.2
-joblib==1.5.3
 
 # Database
 sqlalchemy==1.4.54
