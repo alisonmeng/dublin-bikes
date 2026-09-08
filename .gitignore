@@ -19,3 +19,5 @@ __pycache__/
 # machine_learning
 !machine_learning/process_file/.gitkeep
 machine_learning/input_data/final_merged_data.csv
+# Vercel
+.vercel/
