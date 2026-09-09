@@ -10,6 +10,7 @@ only -- whether a value is present, and whether it looks malformed -- never its
 contents.
 """
 import os
+import socket
 
 from flask import Blueprint, jsonify
 from sqlalchemy import text
@@ -70,6 +71,44 @@ def _check_database_host() -> dict:
     return {"set": True, "looks_valid": not problems, "problems": problems}
 
 
+def _check_dns() -> dict:
+    """
+    Resolve the database hostname on its own.
+
+    Worth separating from the connection attempt: a name that does not resolve
+    and a server that refuses a connection are different problems with
+    different fixes, and the driver reports both as one opaque OperationalError.
+    A hostname that returns NXDOMAIN usually means it was mistyped, or the
+    managed service has been powered off or deleted.
+    """
+    host = os.getenv("DB_URI")
+    if not host:
+        return {"ok": False, "skipped": "DB_URI is not set"}
+
+    try:
+        socket.getaddrinfo(host, None)
+        return {"ok": True, "resolves": True}
+    except socket.gaierror as error:
+        return {
+            "ok": False,
+            "resolves": False,
+            "hint": "hostname does not resolve - check it against the provider "
+                    "console, and that the service is running rather than "
+                    "powered off or still being created",
+            "error": str(error)[:200],
+        }
+    except OSError as error:
+        # Some sandboxed runtimes surface resolution failures as a plain OSError
+        # (EBUSY) rather than gaierror, which reads as a transient fault but is
+        # not one.
+        return {
+            "ok": False,
+            "resolves": False,
+            "hint": "hostname could not be resolved by this runtime",
+            "error": str(error)[:200],
+        }
+
+
 def _check_database() -> dict:
     """Try one trivial query, and report the failure rather than raising."""
     try:
@@ -117,11 +156,14 @@ def healthz():
     alone while a human reads the body.
     """
     configuration = _check_configuration()
-    database = _check_database()
+    dns = _check_dns()
+    # No point dialling a name that does not resolve.
+    database = _check_database() if dns["ok"] else {"ok": False, "skipped": True}
 
     checks = {
         "configuration": configuration,
         "database_host": _check_database_host(),
+        "database_dns": dns,
         "database": database,
         # Only worth querying once a connection exists.
         "tables": _check_tables() if database["ok"] else {"ok": False, "skipped": True},
