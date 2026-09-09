@@ -1,0 +1,38 @@
+name: Smoke test the deployment
+
+# Runs against the live site rather than a test client, so it catches
+# configuration that only exists in the hosting environment. Scheduled daily
+# so a key expiring or a database going away is noticed without someone
+# happening to open the site.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Deployment to test'
+        required: false
+        default: 'https://dublin-bikes.vercel.app'
+  schedule:
+    - cron: '0 7 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run smoke tests
+        env:
+          SMOKE_BASE_URL: ${{ inputs.base_url || 'https://dublin-bikes.vercel.app' }}
+        run: python -m unittest discover -s tests/smoke -t . -v

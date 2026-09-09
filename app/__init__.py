@@ -49,6 +49,7 @@ def create_app(config_class=Config):
     # Import blueprints and cache AFTER creating app but BEFORE using them
     from .routes.main import main_bp, cache
     from .routes.auth import auth_bp, load_logged_in_user
+    from .routes.health import health_bp
 
     app.config.from_object(config_class)
     CORS(app, resources={r"/*": {"origins": ["http://127.0.0.1:63342", "http://localhost:63342"]}},
@@ -64,6 +65,7 @@ def create_app(config_class=Config):
     app.before_request(load_logged_in_user)
 
     app.register_blueprint(main_bp)
+    app.register_blueprint(health_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(ml_bp, url_prefix='/predict')
 
