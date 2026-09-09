@@ -25,9 +25,21 @@ def _resolve_secret_key(app) -> str:
     if app.config.get('DEBUG') or app.config.get('TESTING'):
         return 'dev-only-insecure-key'
 
+    # Report which of the expected variables did arrive. Names only, never
+    # values: a missing variable is almost always a scoping or spelling
+    # mistake, and seeing the rest of the set present makes that obvious
+    # instead of requiring another deploy to find out.
+    expected = (
+        'SECRET_KEY', 'DB_USER', 'DB_PASSWORD', 'DB_URI', 'DB_PORT', 'DB_NAME',
+        'DATABASE_URL', 'DB_SSL_CA', 'BIKE_KEY', 'WEATHER_KEY', 'MAP_KEY', 'MAP_ID',
+    )
+    present = sorted(name for name in expected if os.environ.get(name))
+    missing = sorted(set(expected) - set(present))
+
     raise RuntimeError(
         'SECRET_KEY is not set. Set it in the environment before starting the '
-        'app in production - without it, session cookies can be forged.'
+        'app in production - without it, session cookies can be forged. '
+        f'Visible to this process: {present or "none"}. Not visible: {missing}.'
     )
 
 
