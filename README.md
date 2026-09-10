@@ -5,7 +5,10 @@
 * **Version**: 1.0.0
 * **Date**: May 2026
 * **Course**: COMP30830 Software Engineering, University College Dublin
-* **Team**: Group 13
+* **Team**: Group 13 — [@alisonmeng](https://github.com/alisonmeng),
+  [@kksskkkksskkkks](https://github.com/kksskkkksskkkks),
+  [@francisbrennan](https://github.com/francisbrennan)
+* **Original repository**: [kksskkkksskkkks/COMP30830_Project](https://github.com/kksskkkksskkkks/COMP30830_Project)
 
 ## Table of Contents
 - [1. Introduction](#1-introduction)
@@ -33,6 +36,13 @@ Dublin.
 
 It shows live availability at every station and predicts how many bikes and empty stands a station
 will have over the next 24 hours, by combining a trained neural network with current weather data.
+
+> **Provenance.** The group developed this application at
+> [kksskkkksskkkks/COMP30830_Project](https://github.com/kksskkkksskkkks/COMP30830_Project), which
+> remains the original repository and holds the full development history. This repository carries
+> that history forward and adds the work needed to host the application publicly: managed database
+> support, deployment configuration, scheduled data collection, and deployment tests. Credit for the
+> application itself belongs to all three contributors listed above.
 
 ## 2. Features
 
