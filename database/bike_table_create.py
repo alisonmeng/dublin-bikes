@@ -1,17 +1,8 @@
-import os
-from sqlalchemy import create_engine, text
-from dotenv import load_dotenv
+from sqlalchemy import text
 
-load_dotenv()
+from db_engine import build_engine
 
-USER = os.getenv("DB_USER")
-PASSWORD = os.getenv("DB_PASSWORD")
-PORT = os.getenv("DB_PORT")
-DB = os.getenv("DB_NAME")
-URI = os.getenv("DB_URI")
-
-connection_string = "mysql+pymysql://{}:{}@{}:{}/{}".format(USER, PASSWORD, URI, PORT, DB)
-engine = create_engine(connection_string, echo=True)
+engine = build_engine(echo=True)
 
 with engine.connect() as conn:
     with conn.begin():

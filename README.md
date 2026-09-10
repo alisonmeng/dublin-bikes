@@ -165,11 +165,19 @@ The hosted setup uses three services, each on a permanently free plan:
 2. From the service overview, copy the host, port, user, password and database name, and download
    the **CA certificate** into `certs/aiven-ca.pem`. That certificate is public — it is safe to commit,
    and it is what lets the client verify it is really talking to your database.
-3. Put those values in your local `.env`, then create the schema and seed the stations:
+3. Put those values in your local `.env` — including `DB_SSL_CA=certs/aiven-ca.pem`,
+   without which Aiven refuses the connection — then create the schema and seed the
+   stations **from your own machine**:
    ```bash
    python database/init_db.py           # station, availability, current, users, user_favorites
    python database/bulk_bike_insert.py  # seeds `station` from JCDecaux
    ```
+   These are one-off setup scripts, not part of the deployment: the hosted app has no
+   shell, and schema changes should not run on an incoming request. Any machine that
+   can reach the database will do — Aiven accepts connections from anywhere over TLS.
+
+4. Confirm the result at `/healthz` on the deployment, which reports configuration,
+   DNS resolution, database connectivity and table state in one request.
 
 Only the `station` table is required for the site to function — the map reads live availability
 directly from JCDecaux. The `availability` and `current` tables accumulate history for retraining.

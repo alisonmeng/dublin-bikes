@@ -1,19 +1,8 @@
 import sqlalchemy as sqla
-from sqlalchemy import create_engine
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
+from db_engine import build_engine
 
-USER = os.getenv("DB_USER")
-PASSWORD = os.getenv("DB_PASSWORD")
-PORT = os.getenv("DB_PORT")
-DB = os.getenv("DB_NAME")
-URI = os.getenv("DB_URI")
-
-connection_string = "mysql+pymysql://{}:{}@{}:{}/{}".format(USER, PASSWORD, URI, PORT, DB)
-
-engine = create_engine(connection_string, echo = True)
+engine = build_engine(echo=True)
 
 with engine.begin() as conn:
     for res in conn.execute(sqla.text("SHOW VARIABLES;")):

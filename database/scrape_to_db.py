@@ -10,51 +10,24 @@ Every write is an upsert keyed on the tables' primary keys -- (number,
 last_update) for availability and dt for weather -- so overlapping schedules,
 retries and manual runs cannot create duplicates or fail on them.
 
-This script deliberately builds its own engine instead of importing
-app.connection: importing anything from the `app` package executes
-app/__init__.py, which loads the prediction blueprint and with it scikit-learn
-and both models. There is no reason to pay for that on a cron run that only
-talks to two APIs and a database.
+Connects via database/db_engine.py rather than app.connection: importing
+anything from the `app` package executes app/__init__.py, which loads the
+prediction blueprint and with it both models. There is no reason to pay for
+that on a cron run that only talks to two APIs and a database.
 """
 import os
 import sys
 from datetime import datetime, timezone
-from pathlib import Path
 
 import requests
-from dotenv import load_dotenv
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 
-load_dotenv()
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+from db_engine import build_engine
 
 STATIONS_URL = "https://api.jcdecaux.com/vls/v1/stations"
 WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
 CONTRACT = "dublin"
 REQUEST_TIMEOUT = 30
-
-
-def build_engine():
-    """Create the SQLAlchemy engine, honouring DATABASE_URL and TLS settings."""
-    url = os.getenv("DATABASE_URL")
-    if not url:
-        url = "mysql+pymysql://{}:{}@{}:{}/{}".format(
-            os.getenv("DB_USER"), os.getenv("DB_PASSWORD"),
-            os.getenv("DB_URI"), os.getenv("DB_PORT"), os.getenv("DB_NAME"),
-        )
-
-    connect_args = {}
-    ca_path = os.getenv("DB_SSL_CA")
-    if ca_path:
-        ca = Path(ca_path)
-        if not ca.is_absolute():
-            ca = PROJECT_ROOT / ca
-        connect_args = {"ssl": {"ca": str(ca)}}
-    elif os.getenv("DB_SSL", "").lower() in ("1", "true", "require"):
-        connect_args = {"ssl": {}}
-
-    return create_engine(url, connect_args=connect_args, pool_pre_ping=True)
 
 
 def fetch_stations() -> list:

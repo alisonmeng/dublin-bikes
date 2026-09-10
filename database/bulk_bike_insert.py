@@ -1,21 +1,13 @@
 import os
+
 import requests
-from sqlalchemy import create_engine, text
-from dotenv import load_dotenv
+from sqlalchemy import text
 
-# Load environment variables
-load_dotenv()
+from db_engine import build_engine
 
-USER = os.getenv("DB_USER")
-PASSWORD = os.getenv("DB_PASSWORD")
-PORT = os.getenv("DB_PORT")
-DB = os.getenv("DB_NAME")
-URI = os.getenv("DB_URI")
 BIKE_KEY = os.getenv("BIKE_KEY")
 
-# Create database connection
-connection_string = f"mysql+pymysql://{USER}:{PASSWORD}@{URI}:{PORT}/{DB}"
-engine = create_engine(connection_string)
+engine = build_engine()
 
 def get_station_data():
     """Fetch station basic info from JCDecaux API."""
